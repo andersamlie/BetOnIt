@@ -1,15 +1,16 @@
 {
   "expo": {
     "name": "BetOnIt",
-    "slug": "BetOnIt",
+    "slug": "betonit",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/pfp.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.BetOnIt"
     },
     "android": {
       "adaptiveIcon": {
@@ -36,6 +37,15 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "f7059f32-e318-4bba-bc44-f83eaceee90a"
+      }
+    },
+    "owner": "amliea"
   }
 }
