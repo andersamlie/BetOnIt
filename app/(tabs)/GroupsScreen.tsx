@@ -31,9 +31,6 @@ export default function GroupsScreen() {
   }
   const [groups, setGroups] = useState<Group[]>([]);
 
-
-  
-  
   useEffect(() => {
     if (!user?.groupIDs || user.groupIDs.length === 0) return; // ✅ Ensure groupIDs exist before fetching
   
@@ -87,7 +84,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: bg,
-    padding: 16,
+    paddingTop: 16,
+    paddingHorizontal: 16
   },
   title: {
     fontSize: 28,

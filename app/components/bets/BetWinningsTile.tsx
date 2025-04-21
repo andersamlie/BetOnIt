@@ -11,7 +11,7 @@ const BetWinningsTile: React.FC<BetWinningsTileProps> = ({ betWinnings }) => {
   return (
     <View style={styles.card}>
         <Text>To Win:</Text>
-        <Text style={{ fontWeight: "bold", color: "green" }}>${betWinnings.toFixed(2)}</Text>
+        <Text style={{ fontWeight: "bold", color: "green" }}>${betWinnings > 0 ? betWinnings.toFixed(2) : betWinnings}</Text>
     </View>
   );
 };

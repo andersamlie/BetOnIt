@@ -1,38 +1,67 @@
-import React, { useState } from "react";
-import { Text, View, TextInput, StyleSheet, TouchableOpacity, ScrollView, Image, Alert, FlatList } from "react-native";
+import React, { useState, useEffect, useContext } from "react";
+import { Text, View, TextInput, StyleSheet, TouchableOpacity, ScrollView, Image, Alert, Switch } from "react-native";
 import DropDownPicker from 'react-native-dropdown-picker';
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker"; // Import Image Picker
 import DateTimePicker from "@react-native-community/datetimepicker"; // Import Date Picker
 import { bg, g8 } from "../assets/color";
 import { createBet } from "../firebaseServices";
+import { fetchGroupsByID } from "../firebaseServices";
+import { AuthContext } from '../../authContext';
 
 export default function CreateScreen() {
-  const [betName, setBetName] = useState("");
-  const [betDescription, setBetDescription] = useState("");
-  const [betPhoto, setBetPhoto] = useState("");
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
-  const [showStartPicker, setShowStartPicker] = useState(false);
-  const [showEndPicker, setShowEndPicker] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [open2, setOpen2] = useState(false);
-  const [verificationType, setVerificationType] = useState(null);
-  const [items, setItems] = useState([
-    {label: 'Photo/Video Evidence', value: 'evidence'},
-    {label: 'Majority Vote', value: 'majority'},
-    {label: 'Everyone Verifies', value: 'everyone'},
-    {label: 'Certification', value: 'certification'},
-    {label: 'Bet Owner Verification', value: 'owner'}
-  ]);
-  const [betType, setBetType] = useState(null);
-    const betTypeItems = [
-    { label: 'Two Outcome - spreads, moneylines, O/Us, etc.', value: 'two_outcome'},
-    { label: 'Multi Outcome - futures, props, etc.', value: 'multi_outcome' }
-    ];
+    const [betName, setBetName] = useState("");
+    const [betDescription, setBetDescription] = useState("");
+    const [betPhoto, setBetPhoto] = useState("");
+    const [startDate, setStartDate] = useState(new Date());
+    const [endDate, setEndDate] = useState(new Date());
+    const [showStartPicker, setShowStartPicker] = useState(false);
+    const [showEndPicker, setShowEndPicker] = useState(false);
+    const [open, setOpen] = useState(false);
+    const [open2, setOpen2] = useState(false);
+    const [isPrivate, setIsPrivate] = useState(false)
+    const [verificationType, setVerificationType] = useState(null);
+    // const [betType, setBetType] = useState(null);
+    const [assignedGroupID, setAssignedGroupID] = useState(null);
+
+    const [groups, setGroups] = useState<Group[]>([]);
+
+    const router = useRouter();
+    const userContext = useContext(AuthContext);
+    const user = userContext?.user as User | undefined;
+
+    useEffect(() => {
+    if (!user?.groupIDs || user.groupIDs.length === 0) return; // ✅ Ensure groupIDs exist before fetching
+  
+    const loadGroups = async () => {
+      try {
+        const data = await fetchGroupsByID(user.groupIDs);
+        setGroups(data);
+      } catch (error) {
+        console.error("Error fetching groups:", error);
+      }
+    };
+  
+    loadGroups();
+  }, [user?.groupIDs]); // ✅ Only re-run when groupIDs change
+
+    const [items, setItems] = useState([
+        {label: 'Photo/Video Evidence', value: 'evidence'},
+        {label: 'Majority Vote', value: 'majority'},
+        {label: 'Everyone Verifies', value: 'everyone'},
+        {label: 'Certification', value: 'certification'},
+        {label: 'Bet Owner Verification', value: 'owner'}
+    ]);
+
+    /** const betTypeItems = [
+        { label: 'Two Outcome - spreads, moneylines, O/Us, etc.', value: 'two_outcome'},
+        { label: 'Multi Outcome - futures, props, etc.', value: 'multi_outcome' }
+    ]; **/
 
     const [outcome1, setOutcome1] = useState("");
     const [outcome2, setOutcome2] = useState("");
+
+    const betOutcomes = [outcome1, outcome2]
 
     // For "Multi Outcome" type
     const [multiOutcomes, setMultiOutcomes] = useState([]);
@@ -64,7 +93,15 @@ export default function CreateScreen() {
     setShowEndPicker(false);
   };
 
-  const router = useRouter();
+  const prepareGroupItems = (groups) => {
+    return groups.map(group => ({
+      label: group.groupName,   // or whatever the field for group name is
+      value: group.id      // or whatever the field for group id is
+    }));
+  };
+
+  console.log("GROUPS: ", groups)
+  console.log("prepgroups: ", prepareGroupItems(groups))
 
   // Function to pick an image
   const pickImage = async () => {
@@ -81,7 +118,7 @@ export default function CreateScreen() {
   };
 
   const handleSubmit = () => {
-    if (betName === "" || !verificationType || startDate === endDate) {
+    if (betName === "" || !verificationType || startDate === endDate || outcome1 === outcome2) {
         Alert.alert(
             "Incomplete Information",
             "Some required information is missing. Please complete all fields before submitting.",
@@ -94,6 +131,9 @@ export default function CreateScreen() {
     const betData = {
         betName,
         betDescription,
+        betOutcomes,
+        isPrivate,
+        assignedGroupID,
         verificationType,
         startDate,
         endDate,
@@ -134,37 +174,44 @@ export default function CreateScreen() {
         {betPhoto && <Image source={{ uri: betPhoto }} style={styles.imagePreview} />}
         </View>
 
-        <Text style={styles.label}>Bet Type - Required</Text>
-        <DropDownPicker
-            open={open2}
-            value={betType}
-            items={betTypeItems}
-            setOpen={setOpen2}
-            setValue={setBetType}
-            setItems={() => betTypeItems}
-            zIndex={3000} 
-        />
+        <Text style={styles.label}>Outcomes - Required</Text>
+        {/** <DropDownPicker
+                open={open2}
+                value={betType}
+                items={betTypeItems}
+                setOpen={setOpen2}
+                setValue={setBetType}
+                setItems={() => betTypeItems}
+                zIndex={3000} 
+            />
+        **/}
 
         <View>
-        {betType === "two_outcome" ? (
-            // Two TextInputs side by side
-            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+        
+            <View style={{ flexDirection: "row", justifyContent: "space-between", flex: 1, gap: 4 }}>
             <TextInput
-                style={styles.input}
+                style={{ ...styles.input, width: "48%" }}
                 placeholder="Outcome 1"
                 value={outcome1}
                 onChangeText={setOutcome1}
             />
             <TextInput
-                style={styles.input}
+                style={{ ...styles.input, width: "48%" }}
                 placeholder="Outcome 2"
                 value={outcome2}
                 onChangeText={setOutcome2}
             />
-            </View>
-        ) : betType === "multi_outcome" ? (
+        </View>
+
+        { (outcome1 === outcome2 && outcome1 !== "") && 
+            <Text style={{ color: "red", fontWeight: 800 }}>
+                !! Outcomes cannot be the same !!
+            </Text>
+
+        }
+        {/** betType === "multi_outcome" ? (
             <View>
-            {/* Input to add list items */}
+            Input to add list items 
             <TextInput
                 style={styles.input}
                 placeholder="Enter an outcome and press Enter"
@@ -173,15 +220,42 @@ export default function CreateScreen() {
                 onSubmitEditing={handleAddOutcome} // Adds item on Enter
             />
 
-            {/* Display entered outcomes */}
+            
             <FlatList
                 data={multiOutcomes}
                 keyExtractor={(item, index) => index.toString()}
                 renderItem={({ item }) => <Text style={styles.listItem}>{item}</Text>}
             />
             </View>
-        ) : null}
+        ) : null} **/}
         </View>
+
+         {/* Privacy Picker */}
+        <View style={{flex: 1, flexDirection: "row", justifyContent: "space-between"}}>
+            <Text style={styles.label}>Make Bet Private?</Text>
+            <Switch
+                value={isPrivate}
+                onValueChange={setIsPrivate}
+                thumbColor={isPrivate ? '#007AFF' : '#f4f3f4'}
+                trackColor={{ false: '#767577', true: '#81b0ff' }}
+                style={{marginTop: 4}}
+            />
+        </View>
+
+        {isPrivate && (
+            <View>
+            <Text style={styles.label}>Select Group</Text>
+            <DropDownPicker
+                open={open2}
+                value={assignedGroupID}
+                items={prepareGroupItems(groups)}
+                setOpen={setOpen2}
+                setValue={setAssignedGroupID}
+                setItems={setItems}
+                zIndex={2000}
+            />
+            </View>
+        )}
 
 
         {/* Type of Verification Picker */}
@@ -243,8 +317,9 @@ export default function CreateScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: bg
+    backgroundColor: bg,
+    paddingTop: 16,
+    paddingHorizontal: 16
   },
   title: {
     fontSize: 24,

@@ -22,6 +22,27 @@ export const fetchBets = async () => {
   }
 };
 
+
+export const fetchBetsByID = async (betIDs) => {
+    try {
+      if (!db) {
+        console.error("Firestore db is not initialized.");
+        return [];
+      }
+  
+      const betPromises = betIDs.map(async (betID) => {
+        const betDoc = await getDoc(doc(db, "bets", betID));
+        return betDoc.exists() ? { id: betDoc.id, ...betDoc.data() } : null;
+      });
+  
+      const bets = await Promise.all(betPromises);
+      return bets.filter((bet) => bet !== null); // Remove any null values if a group doesn't exist
+    } catch (error) {
+      console.error("Error fetching groups:", error);
+      return [];
+    }
+  };
+
 export const fetchGroupsByID = async (groupIds) => {
     try {
       if (!db) {

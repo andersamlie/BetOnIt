@@ -14,19 +14,22 @@ export default function ProfileScreen() {
         age: string,
         createdAt: Timestamp;
         email: string;
+        username: string;
         firstName: string;
         lastName: string;
         friends: string[];
         groupIDs: string[];
         profilePic: string;
         winRate: number;
+        betIDs: string[];
+        rating: number;
     }
   const router = useRouter();
   const userContext = useContext(AuthContext);
-  const user = userContext?.user;
+  const user = userContext?.user as User | undefined;
 
-  if (user === null || user === undefined) {
-    return;
+  if (!user) {
+    return <Text>Loading...</Text>; // or navigate away, show a placeholder, etc.
   }
 
   return (
@@ -54,7 +57,7 @@ export default function ProfileScreen() {
       </View>
       <View style={styles.blocksRow}>
         <View style={styles.block}>
-            <Text style={styles.name}>{user.bets ? user.bets.size : 0}</Text>
+            <Text style={styles.name}>{user.betIDs ? user.betIDs.length : 0}</Text>
             <Text style={styles.subtitle}>Total Bets</Text>
         </View>
         <View style={styles.block}>
@@ -93,7 +96,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: bg,
-    padding: 16,
+    paddingTop: 16,
+    paddingHorizontal: 16
   },
   profileSection: {
     flexDirection: 'row',

@@ -7,16 +7,14 @@ import BetWinningsTile from './BetWinningsTile';
 import { DefaultProfilePic } from '@/app/assets/images';
 
 // Define types for the props that the BetCard component will receive
-interface BetCardProps {
+interface BetPreviewProps {
   betTitle: string;
   betSubtitle: string;
-  betAmount: number;
-  betOdds: number;
   betOutcomes: Array<string>;
-  betWinnings: number;
   betStatus: string;
   verificationType: string;
   betPhoto: string;
+  numParticipants: number;
   onPress: () => void;
 }
 
@@ -30,7 +28,7 @@ const getStatusColor = (status: string) => {
     }
 }
 
-const BetCard: React.FC<BetCardProps> = ({ betTitle, betSubtitle, betAmount, betOdds, betWinnings, betStatus, betOutcomes, verificationType, betPhoto, onPress }) => {
+const BetPreview: React.FC<BetPreviewProps> = ({ betTitle, betSubtitle, betStatus, betOutcomes, verificationType, betPhoto, numParticipants, onPress }) => {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
       <View style={styles.cardContent}>
@@ -44,20 +42,21 @@ const BetCard: React.FC<BetCardProps> = ({ betTitle, betSubtitle, betAmount, bet
                 <Text style={styles.statusButtonText}>{betStatus}</Text>
             </TouchableOpacity>
         </View>
-        <View style={styles.betDetail}>
-            <Text style={{ ...styles.betTitle, fontWeight: "600", marginLeft: 4 }}>Your Bet: {betOutcomes} </Text>
+        {betOutcomes && 
+            <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+                <View style={styles.betDetail}>
+                    <Text style={{ ...styles.betTitle, fontWeight: "600" }}>{betOutcomes[0]}</Text>
+                </View>
+                <View style={styles.betDetail}>
+                    <Text style={{ ...styles.betTitle, fontWeight: "600" }}>{betOutcomes[1]}</Text>
+                </View>
+            </View>
+        }
+
+        <View style={{ marginTop: 4 }}>
+            <Text style={{ ...styles.betSubtitle }}>{numParticipants || 0} Active Bettors</Text>
         </View>
-        <View style={styles.betInfo}>
-          <View style={{ alignItems: "flex-start" }}>
-            <BetAmountTile betAmount={betAmount}/>
-          </View>
-          <View style={{ alignItems: "center" }}>
-            <BetOddsTile betOdds={betOdds}/>
-          </View>
-          <View style={{ alignItems: "flex-end" }}>
-            <BetWinningsTile betWinnings={betWinnings}/>
-          </View>
-        </View>
+
         <View style={{ marginTop: 4 }}>
             <Text style={{ ...styles.betSubtitle, fontStyle: 'italic' }}>Verification Type: {verificationType} </Text>
         </View>
@@ -108,7 +107,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 6,
     backgroundColor: g2,
-    marginHorizontal: -2
+    width: "48%",
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center'
   }, 
   betTitle: {
     fontSize: 18,
@@ -144,4 +146,4 @@ const styles = StyleSheet.create({
   }
 });
 
-export default BetCard;
+export default BetPreview;

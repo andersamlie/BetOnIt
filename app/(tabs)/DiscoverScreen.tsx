@@ -1,11 +1,12 @@
 import React from 'react';
 import { Text, View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import BetCard from '../components/bets/BetCard';
 import { LinearGradient } from 'expo-linear-gradient'; // Expo's version of LinearGradient
 import { fetchBets } from '../firebaseServices';
 import { useState, useEffect} from 'react';
 
 import { bg } from '../assets/color';
+import { useRouter } from 'expo-router';
+import BetPreview from '../components/bets/BetPreview';
 
 export default function DiscoverScreen() {
 
@@ -16,10 +17,16 @@ export default function DiscoverScreen() {
         betOdds: number;
         betStatus: string;
         ownerId: string;
+        isPrivate: boolean;
         verificationType: string;
-        betPhoto: string
+        betPhoto: string;
+        betOutcomes: Array<string>;
+        endDate: Date;
+        startDate: Date;
+        participants: [[Object]]
     }
 
+    const router = useRouter();
     const [bets, setBets] = useState<Bet[]>([]);
 
     useEffect(() => {
@@ -29,6 +36,17 @@ export default function DiscoverScreen() {
         };
         loadBets();
     }, []);
+
+    const getBetStatus = (end: Date) => {
+        console.log("END: ", end)
+        const endDate = end ? end.toDate() : new Date();
+        const now = new Date();
+        console.log("end: ", endDate);
+    
+       
+        console.log("now: ", now);
+        return now < endDate ? "Active" : "Settled";
+    }
 
     const determineWinnings = (stake: number, odds: number) => {
         if (odds < 0) {
@@ -56,18 +74,23 @@ export default function DiscoverScreen() {
 
       {/* Scrollable Bet Cards */}
       <ScrollView style={styles.scrollView}>
-        {bets.map((bet) => (
-            <BetCard
+        {bets
+        .filter(bet => !bet.isPrivate)
+        .map(bet => (
+            <BetPreview
                 key={bet.id}  // Ensure unique key for each BetCard
                 betTitle={bet.betName}
                 betSubtitle={bet.betDescription}
-                betStatus={"Active"}  // You can replace this with dynamic status
-                betAmount={18}  // Set your bet amount dynamically
-                betOdds={bet.betOdds}  // Set your bet odds dynamically
-                betWinnings={determineWinnings(18, bet.betOdds)}  // Calculate winnings
+                betStatus={getBetStatus(bet.endDate)}  // You can replace this with dynamic status
+                betOutcomes={bet.betOutcomes}
                 verificationType={bet.verificationType}
                 betPhoto={bet.betPhoto}
-                onPress={() => null} // Add your handler for chat press
+                numParticipants={bet.participants?.length}
+                onPress={() => router.push({ 
+                    pathname: "../screens/bets/BetDetailScreen",
+                    params: { bet: JSON.stringify(bet) } // Convert to string for safe passing
+                })}
+                
             />
         ))}
       </ScrollView>
@@ -79,7 +102,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: bg,
-    padding: 16,
+    paddingTop: 16,
+    paddingHorizontal: 16
   },
   title: {
     fontSize: 28,

@@ -1,9 +1,12 @@
 import { Text, View, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { bg, g1, g2, g3, g4, g5, g6, g7, g8, g9, black } from '../assets/color';
 import BetCard from '../components/bets/BetCard';
-import { fetchBets } from "../firebaseServices";
+import { fetchBets, fetchBetsByID } from "../firebaseServices";
 import { useState, useEffect } from 'react';
 import { useRouter } from "expo-router";
+import { useContext } from 'react';
+import { AuthContext } from '../../authContext';
+import { Timestamp } from 'firebase/firestore';
 
 export default function MyBetsScreen() {
 
@@ -13,39 +16,57 @@ export default function MyBetsScreen() {
     betName: string;
     betOdds: number;
     betStatus: string;
+    betOutcomes: Array<string>;
     ownerId: string;
     verificationType: string;
-    startTime: Date;
-    endTime: Date;
+    participants: [[Object]];
+    startDate: Date;
+    endDate: Date;
     betPhoto: string
   }
   const [bets, setBets] = useState<Bet[]>([]);
   const router = useRouter();
 
+  const userContext = useContext(AuthContext);
+  const user = userContext?.user as User | undefined;
+
+  const userBetIds = user.bets?.map(bet => bet.betID) || [];
+
   useEffect(() => {
     const loadBets = async () => {
-      const data = await fetchBets();
+      const data = await fetchBetsByID(userBetIds);
       setBets(data);
     };
     loadBets();
   }, []);
 
-  const getBetStatus = (start: Date, end: Date) => {
-    const now = new Date;
-    if (now < end) {
-      return "Active"
-    } else {
-      return "Settled"
-    }
+  const getBetStatus = (end: Date) => {
+    const endDate = end ? end.toDate() : new Date();
+    const now = new Date();
+    return now < endDate ? "Active" : "Settled";
   }
 
+  const getBetPick = (participants) => {
+    const match = participants.find(p => p.userID === user.uid);
+    return match ? match.outcome : null;
+  };
+
+  const getBetAmount = (participants) => {
+    const match = participants.find(p => p.userID === user.uid);
+    return match ? match.amount : null;
+  };
+
   const determineWinnings = (stake: number, odds: number) => {
+    if (!odds) {
+        return "TBD"
+    }
     if (odds < 0) {
       return stake + ((100/-odds) * stake);
     } else {
       return stake + ((odds/100) * stake);
     }
   }
+  console.log("HPETS: ",bets);
   return (
     <View style={styles.container}>
       {/* Title and Subtitle */}
@@ -60,8 +81,9 @@ export default function MyBetsScreen() {
             betTitle={bet.betName}
             betPhoto={bet.betPhoto}
             betSubtitle={bet.betDescription}
-            betStatus={getBetStatus(bet.startTime, bet.endTime)}
-            betAmount={18}
+            betStatus={getBetStatus(bet.endDate)}
+            betOutcomes={getBetPick(bet.participants)}
+            betAmount={getBetAmount(bet.participants)}
             betOdds={bet.betOdds}
             betWinnings={determineWinnings(18, bet.betOdds)}
             verificationType={bet.verificationType}
@@ -81,7 +103,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: bg,
-    padding: 16,
+    paddingTop: 16,
+    paddingHorizontal: 16
   },
   title: {
     fontSize: 28,
