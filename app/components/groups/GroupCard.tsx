@@ -13,10 +13,9 @@ interface GroupCardProps {
 }
 
 const GroupCard: React.FC<GroupCardProps> = ({ groupImage, groupName, membersCount, activeBetsCount, onChatPress }) => {
-    console.log("gi: ", groupImage)
   return (
     <View style={styles.card}>
-      <Image source={groupImage ? { uri: groupImage } : DefaultGroupPic } style={styles.groupImage} />
+      <Image source={DefaultGroupPic} style={styles.groupImage} />
       <View style={styles.cardContent}>
         <Text style={styles.groupName}>{groupName}</Text>
         <Text style={styles.groupInfo}>Members: {membersCount} | Active Bets: {activeBetsCount}</Text>

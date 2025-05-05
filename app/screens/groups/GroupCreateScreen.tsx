@@ -5,7 +5,7 @@ import * as ImagePicker from "expo-image-picker";
 import { fetchUsersByID, createGroup, updateGroupMembership } from "../../firebaseServices";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { AuthContext } from "../../../authContext";
-import { DefaultGroupPic } from '../../assets/images';
+import { DefaultGroupPic, DefaultProfilePic } from '../../assets/images';
 
 export default function GroupCreateScreen() {
   const [friends, setFriends] = useState<Friend[]>([]);
@@ -180,7 +180,7 @@ export default function GroupCreateScreen() {
               }}
             >
               <Image
-                source={{ uri: item.profilePic }}
+                source={DefaultProfilePic}
                 style={{ width: 40, height: 40, borderRadius: 20, marginRight: 12 }}
               />
               <Text style={{ fontSize: 16, flex: 1 }}>

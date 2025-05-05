@@ -1,12 +1,14 @@
-import { Text, View, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { Text, View, StyleSheet, ScrollView, Image, RefreshControl } from 'react-native';
+import { useFocusEffect } from "@react-navigation/native";
 import { bg, g1, g2, g3, g4, g5, g6, g7, g8, g9, black } from '../assets/color';
 import BetCard from '../components/bets/BetCard';
 import { fetchBets, fetchBetsByID } from "../firebaseServices";
 import { useState, useEffect } from 'react';
 import { useRouter } from "expo-router";
-import { useContext } from 'react';
+import { useContext, useCallback } from 'react';
 import { AuthContext } from '../../authContext';
-import { Timestamp } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../firebaseConfig';
 
 export default function MyBetsScreen() {
 
@@ -24,6 +26,8 @@ export default function MyBetsScreen() {
     endDate: Date;
     betPhoto: string
   }
+  const [refreshing, setRefreshing] = useState(false);
+
   const [bets, setBets] = useState<Bet[]>([]);
   const router = useRouter();
 
@@ -31,6 +35,33 @@ export default function MyBetsScreen() {
   const user = userContext?.user as User | undefined;
 
   const userBetIds = user.bets?.map(bet => bet.betID) || [];
+
+  useFocusEffect(
+    useCallback(() => {
+      // Fetch bets again every time the screen is focused
+      const loadBets = async () => {
+      const data = await fetchBetsByID(userBetIds);
+      setBets(data);
+    };
+    loadBets();
+    }, [])
+  );
+
+  const fetchLatestUserBets = async (uid: string) => {
+    const userDoc = await getDoc(doc(db, "users", uid));
+    if (userDoc.exists()) {
+      return userDoc.data().bets?.map(b => b.betID) || [];
+    }
+    return [];
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    const latestBetIds = await fetchLatestUserBets(user.uid);
+    const data = await fetchBetsByID(latestBetIds);
+    setBets(data);
+    setRefreshing(false);
+  };  
 
   useEffect(() => {
     const loadBets = async () => {
@@ -66,7 +97,7 @@ export default function MyBetsScreen() {
       return stake + ((odds/100) * stake);
     }
   }
-  console.log("HPETS: ",bets);
+  
   return (
     <View style={styles.container}>
       {/* Title and Subtitle */}
@@ -74,7 +105,12 @@ export default function MyBetsScreen() {
       <Text style={styles.subtitle}>Track your active bets</Text>
       
       {/* Scrollable List of Groups */}
-      <ScrollView style={styles.scrollView}>
+      <ScrollView 
+        style={styles.scrollView}
+        refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+      >
         {bets.map((bet) => (
           <BetCard
             key={bet.id}

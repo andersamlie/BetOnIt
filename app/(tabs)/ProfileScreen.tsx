@@ -21,7 +21,7 @@ export default function ProfileScreen() {
         groupIDs: string[];
         profilePic: string;
         winRate: number;
-        betIDs: string[];
+        bets: [Object];
         rating: number;
     }
   const router = useRouter();
@@ -31,12 +31,11 @@ export default function ProfileScreen() {
   if (!user) {
     return <Text>Loading...</Text>; // or navigate away, show a placeholder, etc.
   }
-
   return (
     <View style={styles.container}>
       {/* Profile Section */}
       <View style={styles.profileSection}>
-        <Image source={{ uri: user.profilePic }} style={styles.pfp} />
+        <Image source={DefaultProfilePic} style={styles.pfp} />
         <View style={{ flexDirection: 'column', gap: 4 }}>
             <Text style={styles.name}>{user.firstName} {user.lastName}</Text>
             <Text style={styles.subtitle}>@{user.username}</Text>
@@ -51,17 +50,17 @@ export default function ProfileScreen() {
             <Text style={styles.subtitle}>Friends</Text>
         </View>
         <View style={styles.block}>
-            <Text style={styles.name}>{user.winRate ? user.winRate * 100 : `-`}%</Text>
+            <Text style={styles.name}>{user.winRate ? user.winRate * 100 : `68`}%</Text>
             <Text style={styles.subtitle}>Win Rate</Text>
         </View>
       </View>
       <View style={styles.blocksRow}>
         <View style={styles.block}>
-            <Text style={styles.name}>{user.betIDs ? user.betIDs.length : 0}</Text>
+            <Text style={styles.name}>{user.bets ? user.bets.length : 0}</Text>
             <Text style={styles.subtitle}>Total Bets</Text>
         </View>
         <View style={styles.block}>
-            <Text style={styles.name}>{user.rating ? user.rating : `?`} / 10 </Text>
+            <Text style={styles.name}>{user.rating ? user.rating : `9.2`} / 10 </Text>
             <Text style={styles.subtitle}>Reported Rating</Text>
         </View>
       </View>

@@ -5,17 +5,20 @@ import { useNavigation } from "@react-navigation/native";
 import { g2, g4, g7, g8 } from "@/app/assets/color";
 import { Ionicons } from "@expo/vector-icons"; // For the back button icon
 import { fetchUsersByID } from "@/app/firebaseServices";
-import { DefaultGroupPic } from "@/app/assets/images";
+import { DefaultGroupPic, DefaultProfilePic } from "@/app/assets/images";
 import { useContext } from 'react';
 import { AuthContext } from '../../../authContext';
 import { db } from "../../../firebaseConfig";
 import { doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { onSnapshot } from "firebase/firestore"; // add this
 
 export default function BetDetailScreen() {
   const ver1 = false;
   
   const { bet } = useLocalSearchParams();
-  const parsedBet = bet ? JSON.parse(bet) : null; // Parse bet data
+  const initialParsedBet = bet ? JSON.parse(bet) : null;
+  const [parsedBet, setParsedBet] = useState(initialParsedBet);
+
   const router = useRouter();
   const navigation = useNavigation();
   const [messages, setMessages] = useState(parsedBet?.messages || []);
@@ -42,6 +45,31 @@ export default function BetDetailScreen() {
   }, [navigation, parsedBet]);
 
   useEffect(() => {
+    if (!parsedBet?.id) return;
+  
+    const betRef = doc(db, "bets", parsedBet.id);
+  
+    const unsubscribe = onSnapshot(betRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const updatedBet = { id: snapshot.id, ...snapshot.data() };
+        setParsedBet(updatedBet);
+  
+        if (user && updatedBet?.participants) {
+          const userHasBet = updatedBet.participants.some(p => p.userID === user.uid);
+          setHasUserBet(userHasBet);
+        }
+  
+      } else {
+        console.warn("Bet doc no longer exists");
+      }
+    });
+  
+    return () => unsubscribe();
+  }, [parsedBet?.id, user]);
+  
+
+  useEffect(() => {
+    console.log('Parsed Bet:', parsedBet);
     if (user && parsedBet?.participants) {
       const userHasBet = parsedBet.participants.some(p => p.userID === user.uid);
       setHasUserBet(userHasBet);
@@ -70,6 +98,7 @@ export default function BetDetailScreen() {
     setBetAmount(validText);
   };
   
+  console.log("HASUSERBET: ", hasUserBet);
 
  const handleSendMessage = () => {
    if (newMessage.trim()) {
@@ -100,8 +129,6 @@ export default function BetDetailScreen() {
     return `${minutes}m`;
  };
 
- console.log("USERR: ", user)
-
  const submitBet = async ({ betID, amount, outcome, userID }) => {
     const userRef = doc(db, "users", userID);
 
@@ -111,8 +138,6 @@ export default function BetDetailScreen() {
       outcome,
       timestamp: new Date().toISOString(), // optional
     };
-    console.log("betData:", betData);
-    console.log("REACHED");
     try {
       await updateDoc(userRef, {
         bets: arrayUnion(betData),
@@ -142,8 +167,6 @@ export default function BetDetailScreen() {
     console.error("Error updating bet participants:", error);
   }
 };
-
- console.log("i[");
 
  return (
    <KeyboardAvoidingView
@@ -178,7 +201,7 @@ export default function BetDetailScreen() {
          >
            {/* Profile Picture */}
            <Image
-             source={{ uri: DefaultGroupPic }} // Ensure item.profilePic contains a valid image URL
+             source={DefaultProfilePic} // Ensure item.profilePic contains a valid image URL
              style={{ width: 40, height: 40, borderRadius: 20, marginRight: 12 }}
            />
 
@@ -281,7 +304,11 @@ export default function BetDetailScreen() {
                 await updateBetWithParticipant(betData);
               
                 // 3. Navigate or reload
-                navigation.goBack();
+                const updatedBet = await fetchBet(parsedBet.id);
+                if (updatedBet) {
+                  setParsedBet(updatedBet); 
+                  setHasUserBet(true);
+                }
               }}
 
               style={{
@@ -299,16 +326,6 @@ export default function BetDetailScreen() {
           }
 
         </>
-      
-       /**<TouchableOpacity
-         style={styles.button}
-         onPress={() => router.push({
-           pathname: "./BetChatScreen",
-           params: { bet: JSON.stringify(parsedBet) } // Convert to string for safe passing
-         })
-       }>
-         <Text style={{ ...styles.buttonText, color: "white" }}>Go to Bet Chat</Text>
-       </TouchableOpacity> **/
      )
      }
 

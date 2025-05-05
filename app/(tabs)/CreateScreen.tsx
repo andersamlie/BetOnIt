@@ -100,9 +100,6 @@ export default function CreateScreen() {
     }));
   };
 
-  console.log("GROUPS: ", groups)
-  console.log("prepgroups: ", prepareGroupItems(groups))
-
   // Function to pick an image
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -306,9 +303,7 @@ export default function CreateScreen() {
         <TouchableOpacity style={styles.button} onPress={handleSubmit}>
           <Text style={{ ...styles.buttonText, color: "white" }}>Create Bet</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={() => router.push("../screens/bets/BetCreationSuccessScreen")}>
-          <Text style={{ ...styles.buttonText, color: "white" }}>go to success screen</Text>
-        </TouchableOpacity>
+        
       </ScrollView>
     </View>
   );

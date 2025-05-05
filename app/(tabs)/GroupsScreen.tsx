@@ -45,9 +45,6 @@ export default function GroupsScreen() {
   
     loadGroups();
   }, [user?.groupIDs]); // ✅ Only re-run when groupIDs change
-  
-
-  console.log("grps: ", groups)
 
   return (
     <View style={styles.container}>
@@ -61,13 +58,14 @@ export default function GroupsScreen() {
           <Ionicons name="add" size={20} color="black" />
         </TouchableOpacity>
       </View>
+      
 
       {/* Scrollable List of Groups */}
       <ScrollView style={styles.scrollView}>
       {groups.map((group) => (
           <GroupCard
             key={group.id}
-            groupImage={group.groupPic}
+            groupImage={DefaultGroupPic}
             groupName={group.groupName}
             membersCount={group.memberIDs.length}
             activeBetsCount={group.betIDs.length}

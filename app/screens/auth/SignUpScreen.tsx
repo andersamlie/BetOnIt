@@ -3,7 +3,7 @@ import { View, TextInput, Button, Text, Alert, TouchableOpacity, StyleSheet, Ima
 import { signUp } from "../../../authService"; // Assuming this handles Firebase auth sign up
 import * as ImagePicker from 'expo-image-picker'; // For image picker functionality
 import { getFirestore, setDoc, doc } from "firebase/firestore";
-import { getStorage, ref, uploadBytes } from "firebase/storage";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getAuth } from "firebase/auth";
 import { useRouter } from "expo-router";
 import { g8 } from "@/app/assets/color";
@@ -51,12 +51,23 @@ const SignUpScreen = () => {
 
     try {
       const user = await signUp(email, password); // Assuming this is handled by Firebase Auth
-      // If profile picture exists, upload it to Firebase Storage
+
+      const response = await fetch(pfp);
+      const blob = await response.blob();
+
+      // Create a storage ref using the user ID
+      const pfpRef = ref(storage, `profilePictures/${user.uid}.jpg`);
+
+      // Upload the blob
+      await uploadBytes(pfpRef, blob);
+
+      // Get the download URL
+      const downloadURL = await getDownloadURL(pfpRef);
       
       await setDoc(doc(db, "users", user.uid), {
         username: username,
         email: user.email,
-        profilePic: pfp, // Optional: default profile picture
+        profilePic: downloadURL, // Optional: default profile picture
         createdAt: new Date(),
         firstName: firstName,
         lastName: lastName,
